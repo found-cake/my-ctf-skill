@@ -1,182 +1,212 @@
 ---
 name: ctf-solver
-description: Solve an explicitly authorized CTF challenge from the current working directory or a user-supplied endpoint, obtain a verified flag, and provide a reproducible solution. Use only when directly invoked by the user.
+description: Solve an explicitly authorized CTF challenge from the current workspace or a user-supplied endpoint, obtain a verified flag, and preserve a reproducible solution using evidence-gated triage, bounded experimentation, and reproducible validation. Use only when directly invoked by the user.
 ---
 
 # CTF Solver
 
 ## Objective
 
-Solve the explicitly authorized CTF challenge and obtain a verified flag.
+Solve the explicitly authorized challenge, obtain a flag supported by target behavior or equivalent concrete evidence, and preserve the minimum reproducible artifacts.
 
-Treat the current working directory as the challenge workspace. Inspect its relevant files and subdirectories without requiring the user to enumerate them. If the user supplies a URL, host, port, protocol, credentials, or other connection information, treat those inputs as part of the authorized challenge scope.
+Treat the current working directory and user-supplied connection details as the complete authorized scope. Determine the real challenge structure from source, runtime behavior, protocols, and observed state rather than trusting the stated category.
 
-The stated category and description are hints, not guarantees. Determine the actual challenge structure from the files, code, protocols, and observed behavior, including mixed-category or intentionally misleading challenges.
+## Investigation workflow
 
-Identify the shortest reliable path to the flag, execute it, verify the result, and preserve the scripts or artifacts needed to reproduce it.
+For ambiguous, nontrivial, or multi-path challenges:
 
-Do not accept a candidate solely because it matches the expected flag format. Confirm it through challenge logic, actual target behavior, recovered data, a reproduced verifier, or equivalent concrete evidence.
+1. Inspect the supplied source, configuration, runtime versions, entrypoints, and reachable behavior.
+2. Trace attacker-controlled data and state across memory, arithmetic, parser, protocol, cryptographic, execution, file, query, template, browser, authorization, privilege, concurrency, and serialization boundaries.
+3. Build a short ranked attack-path inventory.
+4. Test the highest-ranked path with the smallest experiment that clearly distinguishes it.
+5. Update, reject, or park the hypothesis before spending more work on it.
+
+When source evidence exposes a direct, low-cost path, test it first. Record alternatives only if the direct path fails, depends on an uncertain assumption, or cannot produce sufficient validation.
+
+Do not choose a path merely because its tooling is available, its progress is measurable, or it can run unattended. A direct source-derived sink outranks guessed credentials or generic payload search unless evidence shows otherwise.
+
+After a negative result, state exactly what input space or mechanism was excluded and select a materially different path unless new evidence reopens the same one. Stop immediately when a path's predeclared stopping condition is met.
+
+### Attack-path inventory
+
+Before brute force, large wordlists, broad fuzzing, generic payload cycling, or wide enumeration, record plausible source-derived paths with:
+
+- source observation
+- attacker-controlled input or state
+- sink or security boundary
+- required prerequisites
+- smallest distinguishing test
+- estimated cost and target impact
+- supporting and contradicting evidence
+- status: open, confirmed, rejected, or parked
+
+Do not require a formal inventory for an obvious, bounded, source-derived test that can directly confirm or reject the leading path.
+
+Treat titles, comments, unusual language constructs, pinned runtime versions, strict comparisons, and deliberately exposed sinks as evidence. Use them to rank hypotheses; do not treat them as guarantees.
+
+## Bounded experiments and search
+
+### Lightweight distinguishing probes
+
+A small probe does not require the full search gate when all of the following are true:
+
+- inputs are derived directly from source, protocol, or an observed boundary
+- the exact upper bound is small and declared before execution
+- each result distinguishes a concrete hypothesis
+- target impact is low and conservative pacing is used
+- the probe stops immediately after its distinguishing condition is reached
+
+Examples include a few parser-boundary cases, a short list of source-derived routes, or controlled positive/negative fixtures. Do not disguise generic payload cycling as a distinguishing probe.
+
+### Broad or performance-intensive search evidence gate
+
+This gate applies to password cracking, hash preimage guesses, general wordlists, rule expansion, masks, key search, generic payload cycling, broad directory enumeration, large fuzzing corpora, and other repetitive or performance-intensive searches.
+
+Before executing such a search, record all of the following:
+
+```text
+Hypothesis:
+Evidence constraining the candidate distribution or input grammar:
+Exact candidate-generation rule and upper-bound count:
+Measured or estimated rate and total runtime:
+Why a smaller distinguishing experiment is insufficient:
+Why higher-ranked source-derived paths are blocked or lower value:
+Hard stopping condition:
+Result that would justify any later expansion:
+```
+
+If any field is missing, do not run the search.
+
+The following are not evidence that a candidate space is likely:
+
+- the hash or verifier is visible
+- the digest is fixed
+- the search is offline
+- a GPU or fast implementation is available
+- the first portion of a search space is inexpensive
+- a larger wordlist is already installed
+- the search can run concurrently with analysis
+
+Hardware speed changes only the cost of an already justified candidate space. It does not constrain entropy, make a cryptographic preimage attack plausible, or increase information gain from an arbitrary mask.
+
+### Search without distribution evidence
+
+When no source, generator, policy, hint, leak, partial value, or protocol constraint bounds the candidate distribution:
+
+- permit at most one sanity round
+- use only explicitly source-derived candidates
+- cap the round at 1,000 candidates
+- do not use general password dictionaries, mangling rules, masks, or exhaustive character sets
+- park the path immediately after a miss
+
+Do not expand a failed search because the next space is still computationally affordable. Expansion requires new evidence that changes the candidate distribution. Record that evidence before reopening the path.
+
+### Cryptographic checks
+
+Identify whether the task is a preimage, second-preimage, collision, constrained password guess, nonce failure, key-reuse problem, algebraic weakness, or protocol misuse.
+
+- Treat generic SHA-2 and comparable preimage search as infeasible.
+- Compute dictionary or mask cost only after establishing why the secret belongs to that dictionary or mask.
+- Prefer recovering generator state, exploiting nonce or key reuse, modeling algebraic constraints, bypassing the verifier, or reaching the protected operation through another call path.
+- Report an exhausted arbitrary mask only as exclusion of that mask, never as evidence about the unconstrained secret.
 
 ## Scope and autonomy
 
-Proceed autonomously for non-destructive work within the explicitly supplied challenge scope, including:
+Proceed autonomously for non-destructive work inside the explicit challenge scope, including:
 
-- inspecting workspace files and relevant subdirectories
-- static analysis and isolated dynamic analysis
-- interacting with a supplied local or remote endpoint
+- source and configuration inspection
+- isolated static and dynamic analysis
+- interaction with supplied local or remote endpoints
 - debugging, disassembly, and decompilation
-- writing and running solver, exploit, recovery, protocol, or browser-automation scripts
-- bounded fuzzing, constraint solving, and brute force
-- creating reproducible intermediate artifacts
-- validating flag candidates
+- bounded solver, exploit, browser, protocol, and recovery scripts
+- evidence-supported fuzzing, constraint solving, and brute force
+- flag validation and reproducible artifact creation
 
-When an approach fails, diagnose the result and continue with another reasonable approach.
-
-Never expand scope to unrelated hosts, services, accounts, IP ranges, domains, or infrastructure discovered during analysis.
-
-Do not perform destructive actions, persistence, denial-of-service, indiscriminate high-volume scanning, or unrelated data access.
+Never expand to unrelated hosts, accounts, IP ranges, ports, domains, or third-party infrastructure discovered during analysis. Do not perform persistence, denial-of-service, indiscriminate scanning, destructive actions, or unrelated data access.
 
 ## User interaction
 
-Continue autonomously whenever a reasonable alternative exists.
+Continue autonomously while a safe in-scope alternative exists. Ask only for missing essential input, ambiguous authorization, unavoidable destructive or availability-impacting work, an action only the user can perform, required paid access, or unavailable callback infrastructure as specified by the references.
 
-Ask the user only when meaningful progress is blocked by one of the following:
-
-- missing essential challenge input, credentials, or connection information
-- an action only the user can perform, such as MFA, CAPTCHA, or account configuration
-- ambiguous authorization scope
-- an unavoidable destructive or availability-impacting action
-- an essential host installation with no reasonable Docker, portable, existing-tool, or project-local alternative
-- unavailable or unauthenticated ngrok when an external callback is required
-- a required paid service or API
-- unavoidable disclosure of challenge data or credentials to an unrelated external service
-
-Before asking, try reasonable alternatives first. State briefly what was attempted, why alternatives are insufficient, and exactly what information or action is required.
-
-Do not ask merely because the preferred tool is unavailable. Continue with an equivalent approach when possible.
+Before asking, state what was tested, why alternatives are insufficient, and the exact required action.
 
 ## Workspace
 
-Preserve original challenge files.
+Preserve original challenge files. Work on copies or in clearly named `work`, `analysis`, or `output` directories. Keep final solver artifacts separate from disposable caches, browser traces, generated corpora, and build products.
 
-When modification, patching, conversion, or writable execution is required, work on copies or use a clearly named subdirectory such as `work`, `analysis`, or `output`.
-
-Do not recursively inspect unrelated parent directories or unrelated locations.
-
-Keep solver scripts, exploit scripts, recovered files, transcripts, request samples, patched files, and important notes organized so the solution can be reproduced.
-
-Separate disposable build products, dependency caches, and temporary outputs from useful final artifacts.
+Do not recursively inspect unrelated parent directories or locations. Preserve only the minimum requests, transcripts, state, and recovered artifacts required for reproduction.
 
 ## Tool and environment policy
 
-Use existing tools and project-local dependencies when they are sufficient.
-
-Prefer isolated Docker environments over installing tools, runtimes, or system dependencies directly on the host.
-
-Use Docker freely for temporary analysis isolation and callback receivers, but never build or start the challenge service itself unless the user explicitly requests deployment.
-
-Before requesting a host installation, first consider:
-
-1. existing tools
-2. project-local dependencies
-3. portable binaries
-4. a temporary Docker analysis environment
-5. an equivalent technique or tool
+Use the simplest tool native to the challenge. Prefer existing tools and project-local dependencies, and use temporary Docker environments over host installation when isolation or unavailable runtimes are relevant. Never build, start, stop, or reconfigure the supplied challenge service unless the user explicitly requests deployment.
 
 Do not use Homebrew.
 
 ### Python
 
-Use `uv` for Python work.
+Prefer Python for glue, protocol clients, automation, bounded solvers, and data processing when no domain-specific tool is clearly better. Use `uv`, prefer PEP 723 metadata for standalone scripts, and record exact reproduction dependencies. Do not modify the system Python environment.
 
-- Do not modify the system Python environment.
-- Prefer `uv run` for standalone scripts.
-- Use `uv add`, a local project, or PEP 723 inline metadata for dependencies.
-- Record dependencies required for reproduction.
+### Domain-specific tools
+
+Use domain-native tools when they materially simplify or strengthen the solution, such as SageMath or Z3 for algebra and constraints, pwntools and a debugger for binary exploitation, decompilers for reverse engineering, and browser automation for browser-dependent behavior.
 
 ### Node.js
 
-Install Node.js packages only as local dependencies in the working directory.
+Install packages only as local dependencies. Use `npx` or `npm exec` for one-off commands and preserve reproduction-critical package versions.
 
-- Never use npm global installation.
-- Use `npx` or `npm exec` for one-off commands.
-- Record reproducibility-critical packages in `package.json`.
+### Go and compiled helpers
 
-### Go
+Use Go, Rust, C, or another compiled helper when the target is native to that ecosystem or a bounded workload is large enough that Python would be a meaningful bottleneck.
 
-Use Python by default for automation and solver development.
+### Performance-intensive work
 
-Use Go when a bounded workload is large enough that Python would be a meaningful bottleneck, such as high-volume hashing, parsing, search, or protocol work.
+After passing the broad-search evidence gate:
 
-### Disassembler and decompiler
-
-Before installing Ghidra or another disassembler, try IDA via `ida-domain-api` first, and consult:
-
-`https://ida-domain.docs.hex-rays.com/llms.txt`
-
-Fall back to Ghidra or another tool when `ida-domain-api` cannot handle the binary format, lacks a needed capability, or a specific task (such as headless batch scripting across many binaries) is a clearly better fit elsewhere.
-
-Do not trust decompiler output, file extensions, error messages, or a single tool result without appropriate verification.
-
-## Working method
-
-Start with inexpensive, high-information inspection.
-
-Build evidence-based hypotheses and test each with the smallest experiment that can clearly distinguish outcomes.
-
-Avoid generic payload cycling, broad scanning, large wordlists, or brute force without a specific hypothesis, bounded cost, and a clear stopping condition.
-
-Prioritize the minimum path required to obtain and validate the flag rather than fully understanding every component.
-
-Automate repetitive or error-prone work with deterministic scripts.
-
-For performance-intensive work:
-
-1. reduce the search space using formats, constraints, partial outputs, verifier behavior, or protocol state
-2. estimate the workload
-3. choose the simplest suitable implementation
-4. use concurrency only when it materially helps
-5. stop when evidence shows the approach is unproductive
-
-Continue until the flag is verified or progress is genuinely blocked by unavailable information or capabilities.
+1. reduce the space using source and protocol constraints
+2. estimate the exact upper bound
+3. benchmark a representative slice
+4. select the simplest sufficient implementation
+5. use bounded concurrency only when it materially helps
+6. stop at the declared boundary
 
 ## Conditional references
 
-Read only the references whose conditions apply.
+Read only the references whose conditions apply:
 
-1. Read `references/docker.md` first when Docker-related files exist or the user supplies a locally deployed endpoint.
-2. Read `references/remote.md` when interaction with an endpoint is required or the endpoint is the primary challenge input.
-3. Read `references/callback.md` only when an externally reachable receiver is actually required, such as for XSS, SSRF, webhook, bot, or out-of-band interaction.
+1. Read `references/docker.md` when Docker-related files exist or the user supplies a locally deployed endpoint.
+2. Read `references/remote.md` when an endpoint is required or is the primary challenge input.
+3. Read `references/xs-leak.md` when direct read or direct JavaScript exfiltration is unavailable and progress depends on inferring secret-dependent browser or cross-origin state through an observable difference. The presence of a browser bot alone is not sufficient.
+4. Read `references/xs-leak-font.md` only when all of the following are supported by evidence:
+   - attacker control is limited to CSS or inert markup
+   - the secret is rendered as ordered text
+   - direct JavaScript read or exfiltration is unavailable
+   - a simpler boolean, few-state, navigation, resource, cache, or timing oracle is insufficient
+   - the exact browser supports the required font-shaping and geometry behavior
+5. Read `references/callback.md` when an externally reachable receiver is actually required.
 
-When multiple references apply, follow all applicable references.
-
-The scope, autonomy, user-interaction, and tool policies in this file take precedence over reference files.
-
-Do not load unrelated references.
+Follow all applicable references. This file takes precedence when policies conflict. Do not load unrelated references.
 
 ## Flag validation and completion
 
-The task is complete only when:
+Complete the task only when:
 
 1. a final flag is obtained
-2. the flag is supported by challenge logic, actual target behavior, or equivalent concrete evidence
-3. the acquisition process is reproducible
-4. the conclusion is not based on speculation or a mere format match
+2. challenge logic or target behavior supports it
+3. acquisition is reproducible
+4. the conclusion is not based only on format or one noisy observation
 
-Use at least one strong validation path, such as:
+For deterministic paths, use a service success state, verifier, recovered artifact, or fresh reproduction. For noisy side channels, require independent measurements with valid controls and then use, in order of preference:
 
-- the challenge service returns the flag after a successful exploit
-- the challenge reaches an explicit success state
-- a fresh session or instance reproduces the result
-- a local verifier or reconstructed algorithm confirms the value
-- a recovered artifact contains the flag in clear challenge context
-- independent observations converge on the same flag
+1. an independent target verifier or success state
+2. a second oracle family
+3. an exact-candidate predicate with at least one near miss, when the oracle supports it
+4. a fresh independent reproduction reaching the same boundary
 
 Do not repeatedly submit candidates to a competition platform unless the user explicitly supplies and authorizes submission access.
 
 ## Final response
 
-Use the following structure.
+Use this structure:
 
 ### FLAG
 
@@ -192,11 +222,4 @@ Use the following structure.
 
 ### 생성 파일
 
-If the challenge could not be solved, do not invent a flag. Report:
-
-- confirmed observations
-- supported hypotheses
-- attempted approaches and their results
-- the exact blocking point
-- generated scripts and artifacts
-- the highest-value next step
+If blocked, do not invent a flag. Report confirmed observations, supported and rejected hypotheses, exact stopping evidence, the blocking point, generated artifacts, and the highest-value next step.

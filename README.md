@@ -1,25 +1,34 @@
 # ctf-solver
 
-A directly invoked Codex skill for solving explicitly authorized CTF challenges from the current working directory or a user-supplied endpoint.
+A directly invoked Codex skill for solving explicitly authorized CTF challenges from the current working directory or a user-supplied endpoint. It prioritizes source-derived attack paths, bounded distinguishing experiments, evidence-gated broad search, and reproducible validation.
+
+XS-Leak guidance is separated by scope:
+
+- `references/xs-leak.md` selects and validates general XS-Leak and browser side-channel oracles only when direct access is unavailable.
+- `references/xs-leak-font.md` contains specialized ordered-text font and geometry extraction and is loaded only under strict prerequisites, preventing font-specific techniques from dominating other XS-Leak paths.
 
 ## Requirements
 
 **Core**
 
 - A Codex-compatible agent harness that loads skills from `~/.agents/skills/`
-- [Docker](https://docs.docker.com/get-docker/) — used for isolated analysis containers and callback receivers; also for the challenge service itself if you explicitly ask for local deployment
 
-**Nice to have, but not required** — if any of these are missing on the host, `docker.md` allows spinning up a temporary container to provide the missing runtime instead, so pre-installing them just saves that step:
+**Strongly recommended when relevant**
+
+- [Docker](https://docs.docker.com/get-docker/) — used for isolated analysis containers, unavailable runtimes, callback receivers, or local challenge reproduction when explicitly requested
+
+**Nice to have, but not required** — if any of these are missing on the host, `references/docker.md` allows a temporary container to provide the missing runtime when appropriate:
 
 - [`uv`](https://docs.astral.sh/uv/) — Python work
-- Node.js (with `npm`/`npx`) — JavaScript/Node work
-- Go — for bounded workloads large enough that Python would be a meaningful bottleneck
-- Java (JRE) — needed by JVM-based tools such as Ghidra or jadx; Ghidra itself does not need to be pre-installed, since it can be fetched and run from a temporary location on demand
+- Node.js with `npm`/`npx` — JavaScript and browser automation
+- Go, Rust, or C toolchains — native or performance-sensitive bounded helpers
+- Java — JVM-based tools such as Ghidra or jadx
+- Domain-specific tools such as SageMath, Z3, pwntools, debuggers, decompilers, or browser automation frameworks
 
-**Must be provided by you** — these can't be substituted with a temporary container, since they depend on something you personally own or hold credentials for:
+**Optional tools that require user-owned access or credentials**
 
-- IDA Pro with a working [`ida-domain-api`](https://ida-domain.docs.hex-rays.com/) setup — tried first for reverse engineering; falls back to Java-based tools if unavailable
-- An authenticated [ngrok](https://ngrok.com/) account — only needed when a challenge requires an externally reachable callback
+- IDA Pro with a working [`ida-domain-api`](https://ida-domain.docs.hex-rays.com/) setup — optional; Ghidra and other tools remain valid alternatives
+- An authenticated [ngrok](https://ngrok.com/) account — only when a challenge requires an externally reachable callback
 
 ## Installation
 
@@ -34,10 +43,15 @@ Result:
 ```text
 ~/.agents/skills/ctf-solver/
 ├── SKILL.md
+├── README.md
+├── agents/
+│   └── openai.yaml
 └── references/
+    ├── callback.md
     ├── docker.md
     ├── remote.md
-    └── callback.md
+    ├── xs-leak.md
+    └── xs-leak-font.md
 ```
 
 ## Invocation
@@ -61,6 +75,6 @@ $ctf-solver
 FLAG 형식: FLAG{...}
 ```
 
-The flag format shown above is just an example. Any competition's actual prefix (e.g. `picoCTF{...}`, `CTF{...}`, a custom prefix) works without changes, since `SKILL.md` never hardcodes or depends on a specific flag format.
+The flag format is only an example. The skill does not hardcode a prefix.
 
 The current working directory is treated as the challenge workspace, so challenge files do not need to be listed individually.

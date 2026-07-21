@@ -51,7 +51,7 @@ Before increasing request volume:
 5. define a stopping condition
 6. stop if instability or unintended impact appears
 
-Respect published competition limits. In the absence of explicit limits, use conservative pacing.
+Respect published competition limits. In the absence of explicit limits, use conservative pacing, especially for browser bots and endpoints that start heavyweight processes.
 
 ## Sessions and reproducibility
 
