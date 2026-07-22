@@ -1,5 +1,5 @@
 interface:
-  display_name: "Evidence-Gated CTF Solver"
+  display_name: "ctf-solver"
   short_description: "CTF solving with evidence-gated triage and reproducible validation"
   default_prompt: "Use $ctf-solver to solve this authorized CTF with evidence-gated attack-path triage and a reproducible verified flag."
 policy:
