@@ -40,6 +40,8 @@ Keep shaping context bounded:
 
 Do not assume a generated font is correct merely because it compiles or downloads.
 
+Design the overflow predicate so it is driven only by the target character, not by incidental text length: zero or fix the advance width of every non-target character in the measured run. Also confirm the control container's own intrinsic size (for example, an SVG element's default viewport width) does not already exceed the overflow threshold regardless of injected content — a known-negative control must be verified against the actual threshold, not assumed negative because it looks shorter.
+
 ## 3. Use paired-complement predicates
 
 For each encoded bit, build two complementary predicates:
@@ -60,6 +62,8 @@ Add independent known-positive, known-negative, and liveness controls. Configure
 ## 4. Load fonts deliberately
 
 Preload each measurement font through rendered but visually hidden text. `display:none` may prevent the font from being needed; off-screen positioning, clipping, or `opacity:0` may preserve layout, but must be verified in the exact browser.
+
+Measure only after `document.fonts` (or an equivalent local signal) confirms the specific measurement font has loaded and swapped in, not merely after a fixed delay. The fallback font rendered while the web font is still loading can have different metrics and transiently overflow on its own, registering as a false positive before the real font takes over.
 
 Budget time for:
 
@@ -94,6 +98,8 @@ Prefix extraction is stateful: one wrong character can make all later ligatures 
 6. When the next position becomes all-zero, all-one, repeated, or low-confidence, revalidate the previous character before continuing.
 
 Parity, repeated code words, or error-correcting codes may supplement controls when the bot lifetime permits. They do not replace liveness or a functioning oracle.
+
+Never use a character this same oracle inferred earlier as a calibration control for measuring the next character — that is circular verification and any systematic bias (line-wrap rounding, document-height inflation, stale mount) will pass unnoticed. Inject an independently known string into a separate, clearly labeled element instead, and use that for calibration.
 
 ## 7. Diagnose common failures
 

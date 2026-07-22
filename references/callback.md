@@ -41,6 +41,8 @@ If ngrok is unavailable or unauthenticated and this blocks progress, follow the 
 
 Do not silently substitute another tunneling provider without verifying its behavior and disclosing the substitution.
 
+An unauthenticated ngrok tunnel shows a browser warning interstitial page to visitors before reaching the actual endpoint. This silently blocks any browser-driven subresource request routed through it (font loads, images, fetches used as an oracle) — verify with an authenticated tunnel or a header/flag that skips the interstitial, and confirm with a real subresource request, not just a direct top-level visit, that requests actually reach the receiver.
+
 ## Data minimization
 
 Receive and retain only data required to solve and verify the challenge.

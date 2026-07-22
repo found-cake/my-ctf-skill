@@ -16,6 +16,8 @@ When the user supplies a local URL, host, or port, assume the challenge instance
 - Do not run `docker build`, `docker run`, `docker compose up`, or equivalent commands for the challenge service.
 - Inspect `Dockerfile`, Compose files, entrypoints, environment files, and container configuration only as source material for understanding the challenge.
 
+Do not use `docker exec`, `docker cp`, log/volume inspection, or any other form of container introspection to read a secret, hash, source file, or flag directly out of the running challenge container as a shortcut when an intended path is difficult or blocked. This does not satisfy the flag-validation requirement that acquisition be supported by target or challenge logic, and the resulting flag would not be reproducible through the actual exploit.
+
 If no endpoint is supplied:
 
 - continue with static and file-based analysis first
