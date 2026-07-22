@@ -27,15 +27,17 @@ When source evidence exposes a direct, low-cost path, test it first. Record alte
 
 Do not choose a path merely because its tooling is available, its progress is measurable, or it can run unattended. A direct source-derived sink outranks guessed credentials or generic payload search unless evidence shows otherwise.
 
-Before treating a cryptographic or hash comparison as the primary working path, enumerate every other reachable execution, deserialization, or parsing sink found in source, and record for each one whether its transformation chain has been traced to a conclusive result — works, or demonstrably blocked at an exact point — not merely attempted once or judged difficult at a glance. A single shallow check (such as one encoding or filter that appears to block a simple payload) is not conclusive. Only treat the cryptographic path as primary once this record shows every such sink is conclusively blocked, or has clearly lower expected value with evidence to support that.
+Before treating an unconstrained cryptographic or hash search as the primary working path, enumerate the other reachable execution, deserialization, parsing, authorization, or logic sinks that source or observed behavior makes plausible. For each one, trace its transformation chain to a conclusive result — works, demonstrably blocked at an exact point, or clearly lower expected value with supporting evidence — rather than attempting it once or judging it difficult at a glance. A single shallow check, such as one encoding or filter blocking a simple payload, is not conclusive. This prioritization rule does not delay a concrete cryptographic weakness already supported by evidence, such as nonce or key reuse, bounded generator state, an algebraic flaw, protocol misuse, or a provably small key space.
 
-A conclusion about what a target requires or registers, drawn only from reading the source, is a hypothesis, not a verified fact — this is especially true for runtime-specific semantics such as conditional declarations, dynamic dispatch, redeclaration, and hoisting, which can behave differently from a naive reading. Before concluding a path is blocked because "the code requires X," reproduce the exact source locally in an isolated container, exercise the actual branch or condition observed at the target (including the false/failure branch), and inspect the real runtime state. A generic clean environment of the same language and version is not a substitute for running the target's own conditional logic.
+A conclusion about what a target requires or registers, drawn only from reading the source, is a hypothesis, not a verified fact — this is especially true for runtime-specific semantics such as conditional declarations, dynamic dispatch, redeclaration, and hoisting, which can behave differently from a naive reading. When such semantics materially determine whether a path is open, verify them with the smallest faithful reproduction that uses the target version and exercises the exact branch or condition, including its false or failure branch, where practical. Do not deploy or reconfigure the challenge service without authorization. If faithful local reproduction is unavailable, use bounded positive and negative observations against the authorized target and state the remaining uncertainty. A generic clean environment is not sufficient when it omits the target's decisive conditional logic.
 
 When a reproduction is used to confirm or rule out a hypothesis, verify it actually exercises the exact mechanism or identifier the hypothesis depends on, not a same-sounding proxy for it. Checking whether a plain name resolves is not the same test as checking whether an internal, mangled, or otherwise-derived identifier for the same underlying construct resolves — disproving one does not disprove the other, and treating it as if it does can close a path that was never actually tested.
 
 After a negative result, state exactly what input space or mechanism was excluded and select a materially different path unless new evidence reopens the same one. Stop immediately when a path's predeclared stopping condition is met.
 
-Closing or parking one path — including a search that the evidence gate below disallows — is not evidence that the challenge itself is blocked. Report the task as blocked only once every plausible path in the inventory has been tested or ruled out with evidence, not immediately after the first one closes.
+Closing or parking one path — including a search that the evidence gate below disallows — is not evidence that the challenge itself is blocked. Report the task as blocked only once every plausible path in the inventory has been tested to its predeclared stopping condition or ruled out with specific evidence, not immediately after the first one closes.
+
+For this rule, a plausible path is a technically reachable path supported by source, runtime, protocol, or observed behavioral evidence — not a purely speculative technique with no identified sink or mechanism. A parked path does not satisfy the blocked condition. Do not remove, downgrade, or omit a previously recorded path merely to justify reporting the challenge as blocked.
 
 ### Attack-path inventory
 
@@ -57,7 +59,7 @@ Do not require a formal inventory for an obvious, bounded, source-derived test t
 
 Treat titles, comments, unusual language constructs, pinned runtime versions, strict comparisons, and deliberately exposed sinks as a reason to test something, never as proof that a path is or is not a trap. A challenge author can plant a title, description, or comment to mislead just as easily as to hint, so weigh what the text says far less than what the code actually does — whether a sink is reachable, whether a transformation chain completes, whether a comparison is reachable with attacker-controlled input. When a comment's claim and the traced code behavior disagree, the traced behavior wins.
 
-An unusual or old pinned runtime version (an outdated interpreter, engine, or library) is a different kind of signal — unlike text, an author cannot easily fake it, and it is rarely accidental. When it appears alongside an otherwise-unexplained code pattern (a conditional declaration, a deprecated construct, behavior that seems to require an explanation), research that exact version's own source, changelog, or internals for the relevant subsystem before concluding the pattern behaves as a newer or more familiar version would.
+An unusual or old pinned runtime version (an outdated interpreter, engine, or library) is a higher-cost signal than a title or comment and deserves early investigation, but it is still a hypothesis rather than proof and may be an intentional decoy. When it appears alongside an otherwise-unexplained code pattern, such as a conditional declaration, deprecated construct, or version-sensitive behavior, research that exact version's source, changelog, or internals for the relevant subsystem and verify that the version actually changes the reachable behavior.
 
 ## Bounded experiments and search
 
@@ -75,6 +77,8 @@ Examples include a few parser-boundary cases, a short list of source-derived rou
 
 ### Broad or performance-intensive search evidence gate
 
+Brute force and exhaustive search are not prohibited. A small or strongly constrained search may be tested early when concrete evidence defines its exact space and the expected cost is low. Blind, unbounded, or large-scale search must pass this gate and normally remains a fallback behind higher-value source-, runtime-, protocol-, parsing-, execution-, or logic-derived paths.
+
 This gate applies to password cracking, hash preimage guesses, general wordlists, rule expansion, masks, key search, generic payload cycling, broad directory enumeration, large fuzzing corpora, and other repetitive or performance-intensive searches.
 
 Before executing such a search, record all of the following:
@@ -84,13 +88,14 @@ Hypothesis:
 Evidence constraining the candidate distribution or input grammar:
 Exact candidate-generation rule and upper-bound count:
 Measured or estimated rate and total runtime:
+Concurrency and host-resource budget:
 Why a smaller distinguishing experiment is insufficient:
 Why higher-ranked source-derived paths are blocked or lower value:
 Hard stopping condition:
 Result that would justify any later expansion:
 ```
 
-If any field is missing, do not run the search.
+If any field is missing, do not run the broad or performance-intensive search. This does not prohibit an obvious, low-cost, source-derived exhaustive check that satisfies the lightweight-probe conditions above.
 
 The following are not evidence that a candidate space is likely:
 
@@ -102,7 +107,7 @@ The following are not evidence that a candidate space is likely:
 - a larger wordlist is already installed
 - the search can run concurrently with analysis
 
-Hardware speed changes only the cost of an already justified candidate space. It does not constrain entropy, make a cryptographic preimage attack plausible, or increase information gain from an arbitrary mask.
+Hardware speed changes only the cost of an already justified candidate space. It does not constrain entropy, make a cryptographic preimage attack plausible, or increase information gain from an arbitrary mask. Do not silently consume all available host resources: use a declared worker limit, do not default to every logical CPU, and reduce or stop concurrency when sustained saturation interferes with the user's machine or other analysis.
 
 ### Search without distribution evidence
 
@@ -193,7 +198,7 @@ These conditions can start applying mid-task as the working hypothesis changes �
 
 1. Read `references/docker.md` when Docker-related files exist or the user supplies a locally deployed endpoint.
 2. Read `references/remote.md` when an endpoint is required or is the primary challenge input.
-3. Read `references/xs-leak.md` during initial reconnaissance (step 1 of the investigation workflow), as soon as source shows a browser bot or admin/visitor automation — do not wait until a side-channel technique is already judged necessary; the reference itself helps make that judgment.
+3. Read `references/xs-leak.md` during initial reconnaissance (step 1 of the investigation workflow), as soon as source shows a browser bot or admin/visitor automation — do not wait until a side-channel technique is already judged necessary; reading it early is cheap and the reference itself helps make that judgment. Before elevating to an actual XS-Leak or side-channel exploit attempt, first check supported direct paths such as sanitizer or parser bypass, `postMessage`, same-origin or opener communication, internal APIs, authorization bypass, and deterministic state changes — the presence of a browser bot alone does not make a side-channel technique necessary.
 4. Read `references/xs-leak-font.md` only when all of the following are supported by evidence:
    - attacker control is limited to CSS or inert markup
    - the secret is rendered as ordered text

@@ -56,6 +56,8 @@ Result:
 
 ## Invocation
 
+This repository includes `agents/openai.yaml` with `policy.allow_implicit_invocation: false`, so the skill only runs when explicitly invoked with `$ctf-solver`.
+
 ```text
 $ctf-solver
 

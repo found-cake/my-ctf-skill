@@ -37,11 +37,11 @@ General browser-oracle measurement design is in `xs-leak.md`; specialized font b
 
 Ngrok usage for an authorized CTF callback is pre-approved and does not require additional confirmation by itself. The tool-installation rules in `SKILL.md` apply to installing ngrok itself.
 
-If ngrok is unavailable or unauthenticated and this blocks progress, follow the user-interaction policy in `SKILL.md`.
+If ngrok is unavailable, lacks a usable account or authtoken, or otherwise blocks progress, follow the user-interaction policy in `SKILL.md`.
 
 Do not silently substitute another tunneling provider without verifying its behavior and disclosing the substitution.
 
-An unauthenticated ngrok tunnel shows a browser warning interstitial page to visitors before reaching the actual endpoint. This silently blocks any browser-driven subresource request routed through it (font loads, images, fetches used as an oracle) — verify with an authenticated tunnel or a header/flag that skips the interstitial, and confirm with a real subresource request, not just a direct top-level visit, that requests actually reach the receiver.
+Distinguish two ngrok failure modes. An agent without the required account or authtoken may reject HTML content before the receiver is served. Separately, a free ngrok endpoint may return a browser-warning interstitial instead of the receiver content; this can break automated pages and subresource-based oracles. When the client can set headers, `ngrok-skip-browser-warning` or a custom non-browser User-Agent may bypass the free-endpoint interstitial, but do not assume a challenge bot or passive subresource request can set them. Confirm reachability with the same request type the exploit will use — for example, an actual font, image, script, or fetch request — rather than only a direct top-level visit.
 
 ## Data minimization
 
